@@ -21,7 +21,7 @@ import { fetchFinancialInsights } from '../../services/aiService';
 export default function FinancialInsightsSection({ onPromptSelect }) {
   const { session, isDemoUser } = useAuth();
   const { currency, formatCurrency } = useCurrency();
-  const { transactions, monthlyBudget, budgets, categories } = useTransactions();
+  const { transactions, monthlyBudget, budgets, categories, recurringExpenses } = useTransactions();
 
   const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -37,6 +37,7 @@ export default function FinancialInsightsSection({ onPromptSelect }) {
           monthlyBudget,
           budgets,
           categories,
+          recurringExpenses,
         };
         const res = await fetchFinancialInsights({
           currency,

@@ -99,10 +99,11 @@ export default function AIAssistant() {
             </h4>
             <div className="space-y-2">
               {[
-                { title: 'Budget Pacing Check', query: 'Am I on track with my monthly budget?' },
-                { title: 'Reduce Discretionary Spend', query: 'How can I trim 15% from my flexible expenses?' },
-                { title: 'Subscription Audit', query: 'Review my recurring subscriptions and memberships' },
-                { title: 'End-of-Month Projection', query: 'What is my projected total spend at the end of the month?' },
+                { title: 'Top Spending Category', query: 'Where am I spending the most?' },
+                { title: 'Month-over-Month Change', query: 'Which category increased compared with last month?' },
+                { title: 'Budget Status & Safe Pace', query: 'How much budget is remaining and what can I safely spend?' },
+                { title: 'Upcoming Recurring Bills', query: 'What are my upcoming recurring payments and subscriptions?' },
+                { title: 'Savings Strategy', query: 'How can I reduce my expenses and save more this month?' },
               ].map((item, idx) => (
                 <button
                   key={idx}
@@ -132,7 +133,8 @@ export default function AIAssistant() {
           </div>
 
           <AIChatBox
-            key={selectedPrompt}
+            key={selectedPrompt || 'default'}
+            initialPrompt={selectedPrompt}
             height="h-[580px] sm:h-[620px]"
             className="shadow-sm"
           />

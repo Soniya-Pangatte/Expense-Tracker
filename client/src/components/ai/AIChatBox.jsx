@@ -19,16 +19,17 @@ import { useTransactions } from '../../context/TransactionContext';
 import { sendChatMessage, fetchConversationHistory, clearConversationMessages } from '../../services/aiService';
 
 const DEFAULT_SUGGESTED_QUESTIONS = [
-  'Am I on track with my monthly budget?',
-  'Where is most of my money going?',
-  'How can I save ₹5,000 this month?',
-  'What is my daily burn rate and projection?',
+  'Where am I spending the most?',
+  'Which category increased compared to last month?',
+  'How much budget is remaining?',
+  'What are my upcoming recurring payments?',
+  'How can I reduce my expenses?',
 ];
 
-export default function AIChatBox({ className = '', height = 'h-[550px]', isCompact = false }) {
+export default function AIChatBox({ className = '', height = 'h-[550px]', isCompact = false, initialPrompt = null }) {
   const { session, isDemoUser } = useAuth();
   const { currency, formatCurrency } = useCurrency();
-  const { transactions, monthlyBudget, budgets, categories } = useTransactions();
+  const { transactions, monthlyBudget, budgets, categories, recurringExpenses } = useTransactions();
 
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
@@ -39,7 +40,7 @@ export default function AIChatBox({ className = '', height = 'h-[550px]', isComp
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Initialize with greeting message
+  // Initialize with greeting message or initial prompt
   useEffect(() => {
     const initialGreeting = {
       id: 'greeting-welcome',
@@ -48,7 +49,11 @@ export default function AIChatBox({ className = '', height = 'h-[550px]', isComp
       created_at: new Date().toISOString(),
     };
     setMessages([initialGreeting]);
-  }, []);
+
+    if (initialPrompt && initialPrompt.trim()) {
+      handleSendMessage(initialPrompt.trim());
+    }
+  }, [initialPrompt]);
 
   // Auto scroll to bottom
   const scrollToBottom = () => {
@@ -80,6 +85,7 @@ export default function AIChatBox({ className = '', height = 'h-[550px]', isComp
         monthlyBudget,
         budgets,
         categories,
+        recurringExpenses,
       };
 
       const res = await sendChatMessage({
