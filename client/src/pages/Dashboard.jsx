@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import {
   TrendingUp,
   TrendingDown,
@@ -7,7 +8,8 @@ import {
   ArrowUpRight,
   Sparkles,
   PlusCircle,
-  Database
+  Database,
+  Repeat
 } from 'lucide-react';
 import { useTransactions } from '../context/TransactionContext';
 import { useAuth } from '../context/AuthContext';
@@ -49,9 +51,22 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="bg-white dark:bg-[#203D49] border border-[#C4DCE3] dark:border-[#365765] rounded-xl px-4 py-2.5 text-right shadow-sm">
-            <p className="text-[11px] font-medium text-[#526C78] dark:text-[#83BDCF]">Active Month</p>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link
+            to="/recurring"
+            className="bg-white dark:bg-[#203D49] border border-[#C4DCE3] dark:border-[#365765] rounded-xl px-3.5 py-2 text-right shadow-sm hover:border-[#447F98] transition-colors group"
+          >
+            <p className="text-[10px] font-medium text-[#526C78] dark:text-[#83BDCF] group-hover:text-[#447F98]">
+              Scheduled Bills
+            </p>
+            <p className="text-sm font-bold text-[#243D49] dark:text-[#D6EBF3] flex items-center gap-1">
+              <Repeat size={12} className="text-[#447F98]" />
+              <span>{stats.activeRecurringCount} active</span>
+            </p>
+          </Link>
+
+          <div className="bg-white dark:bg-[#203D49] border border-[#C4DCE3] dark:border-[#365765] rounded-xl px-4 py-2 text-right shadow-sm">
+            <p className="text-[10px] font-medium text-[#526C78] dark:text-[#83BDCF]">Active Month</p>
             <p className="text-sm font-bold text-[#243D49] dark:text-[#D6EBF3]">November 2026</p>
           </div>
         </div>

@@ -92,6 +92,8 @@ CREATE TRIGGER on_auth_user_created
 CREATE TABLE IF NOT EXISTS public.monthly_budgets (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  name TEXT DEFAULT 'Monthly Budget',
+  description TEXT,
   month_year TEXT NOT NULL, -- e.g. '2026-11'
   amount NUMERIC(12, 2) NOT NULL CHECK (amount >= 0),
   currency TEXT DEFAULT 'INR' NOT NULL,
@@ -183,8 +185,10 @@ CREATE TABLE IF NOT EXISTS public.budgets (
   currency TEXT DEFAULT 'INR',
   period TEXT DEFAULT 'monthly',
   color TEXT DEFAULT '#64866A',
+  description TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, category_name)
 );
 
 ALTER TABLE public.budgets ENABLE ROW LEVEL SECURITY;
@@ -205,8 +209,13 @@ CREATE TABLE IF NOT EXISTS public.recurring_expenses (
   frequency TEXT DEFAULT 'Monthly',
   due_date TEXT NOT NULL,
   category TEXT NOT NULL,
-  status TEXT DEFAULT 'Active' CHECK (status IN ('Active', 'Upcoming', 'Paused', 'Cancelled')),
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  payment_method TEXT DEFAULT 'UPI',
+  start_date DATE DEFAULT CURRENT_DATE,
+  notes TEXT,
+  description TEXT,
+  status TEXT DEFAULT 'Active' CHECK (status IN ('Active', 'Upcoming', 'Paused', 'Cancelled', 'Completed')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE public.recurring_expenses ENABLE ROW LEVEL SECURITY;

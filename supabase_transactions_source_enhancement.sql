@@ -39,3 +39,4 @@ BEGIN
     ALTER TABLE public.transactions ADD COLUMN payment_method TEXT DEFAULT 'UPI';
   END IF;
 END $$;
+

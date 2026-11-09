@@ -40,3 +40,4 @@ export function normalizeSourceValue(source) {
   if (s.includes('other')) return 'other';
   return 'manual';
 }
+
