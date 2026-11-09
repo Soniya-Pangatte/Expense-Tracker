@@ -232,9 +232,27 @@ CREATE TABLE IF NOT EXISTS public.receipt_uploads (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   image_url TEXT NOT NULL,
   file_name TEXT,
+  file_hash TEXT,
+  storage_path TEXT,
+  file_size BIGINT,
+  mime_type TEXT,
+  merchant_name TEXT,
+  receipt_date DATE,
+  receipt_time TEXT,
+  total_amount NUMERIC(12, 2),
+  currency TEXT DEFAULT 'INR',
+  subtotal NUMERIC(12, 2),
+  tax_amount NUMERIC(12, 2),
+  discount_amount NUMERIC(12, 2),
+  payment_method TEXT DEFAULT 'UPI',
+  suggested_category TEXT,
+  items JSONB DEFAULT '[]'::jsonb,
+  raw_text TEXT,
   extracted_data JSONB,
-  status TEXT DEFAULT 'pending_review' CHECK (status IN ('pending_review', 'verified', 'rejected')),
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  transaction_id UUID REFERENCES public.transactions(id) ON DELETE SET NULL,
+  status TEXT DEFAULT 'review_required' CHECK (status IN ('uploaded', 'processing', 'review_required', 'confirmed', 'failed', 'pending_review', 'verified', 'rejected')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE public.receipt_uploads ENABLE ROW LEVEL SECURITY;
@@ -243,6 +261,10 @@ CREATE POLICY "Users can manage their own receipts"
   ON public.receipt_uploads FOR ALL
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
+
+CREATE INDEX IF NOT EXISTS idx_receipt_uploads_user_hash ON public.receipt_uploads(user_id, file_hash);
+CREATE INDEX IF NOT EXISTS idx_receipt_uploads_user_date ON public.receipt_uploads(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_receipt_uploads_tx ON public.receipt_uploads(transaction_id);
 
 
 -- 9. BANK IMPORTS TABLE

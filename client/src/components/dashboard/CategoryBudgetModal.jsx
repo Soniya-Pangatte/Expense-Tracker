@@ -291,3 +291,4 @@ export default function CategoryBudgetModal({ isOpen, onClose, budget = null }) 
     </div>
   );
 }
+

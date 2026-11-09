@@ -72,3 +72,4 @@ BEGIN
       WITH CHECK (auth.uid() = user_id);
   END IF;
 END $$;
+

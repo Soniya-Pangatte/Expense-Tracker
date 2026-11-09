@@ -334,3 +334,4 @@ export default function RecurringExpenseModal({ isOpen, onClose, recurring = nul
     </div>
   );
 }
+

@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import aiRoutes from './routes/aiRoutes.js';
+import receiptRoutes from './routes/receiptRoutes.js';
 
 dotenv.config();
 
@@ -36,6 +37,9 @@ app.get('/api/health', (req, res) => {
 
 // AI Assistant Routes
 app.use('/api/ai', aiRoutes);
+
+// Smart Receipt Scanning & OCR Routes
+app.use('/api/receipts', receiptRoutes);
 
 // Generic 404 handler
 app.use((req, res) => {
