@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-main: #D6EBF3;        /* Ice Blue */
+    --bg-secondary: #B9D9E1;   /* Glacier */
+    --card-bg: #FFFFFF;        /* Card background */
+    --card-elevated: #F4FAFC;  /* Elevated card background */
+    --primary: #447F98;        /* Turquoise */
+    --secondary: #629BB5;      /* Slate Blue */
+    --accent: #B9D9E1;         /* Glacier */
+    --text-main: #243D49;      /* Primary text */
+    --text-secondary: #526C78; /* Secondary text */
+    --text-muted: #758D97;     /* Muted text */
+    --border-color: #C4DCE3;   /* Borders */
+    --input-bg: #FFFFFF;       /* Input background */
+    --sidebar-bg: #E8F3F7;     /* Sidebar background */
+    --btn-primary: #447F98;    /* Primary button */
+    --btn-text: #FFFFFF;       /* Primary button text */
+  }
+
+  .dark {
+    --bg-main: #152B35;        /* Dark page background */
+    --bg-secondary: #1B3541;   /* Dark secondary background */
+    --card-bg: #203D49;        /* Dark card background */
+    --card-elevated: #284956;  /* Dark elevated card */
+    --primary: #83BDCF;        /* Dark primary color */
+    --secondary: #629BB5;      /* Dark secondary color */
+    --accent: #345968;         /* Dark soft accent */
+    --text-main: #EAF4F7;      /* Dark primary text */
+    --text-secondary: #C0D5DC; /* Dark secondary text */
+    --text-muted: #91ADB8;     /* Dark muted text */
+    --border-color: #365765;   /* Dark borders */
+    --input-bg: #1B3541;       /* Dark input background */
+    --sidebar-bg: #1A333F;     /* Dark sidebar background */
+    --btn-primary: #83BDCF;    /* Dark primary button */
+    --btn-text: #152B35;       /* Dark primary button text */
+  }
+
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* Custom scrollbars with Turquoise & Slate Blue styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(68, 127, 152, 0.35);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(68, 127, 152, 0.6);
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(131, 189, 207, 0.35);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(131, 189, 207, 0.6);
+}

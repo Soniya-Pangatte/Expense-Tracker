@@ -1,0 +1,191 @@
+export const initialCategories = [
+  { id: 'cat-1', name: 'Housing & Rent', color: '#C4DCE3', icon: 'Home', budget: 1400 },
+  { id: 'cat-2', name: 'Groceries & Food', color: '#E07A5F', icon: 'ShoppingBag', budget: 600 },
+  { id: 'cat-3', name: 'Utilities & Bills', color: '#3D5A80', icon: 'Zap', budget: 250 },
+  { id: 'cat-4', name: 'Transport & Fuel', color: '#F4A261', icon: 'Car', budget: 300 },
+  { id: 'cat-5', name: 'Entertainment & Leisure', color: '#81B29A', icon: 'Film', budget: 200 },
+  { id: 'cat-6', name: 'Health & Fitness', color: '#9B5DE5', icon: 'HeartPulse', budget: 150 },
+  { id: 'cat-7', name: 'Shopping & Apparel', color: '#F15BB5', icon: 'Tag', budget: 250 },
+  { id: 'cat-8', name: 'Dining Out', color: '#EE6C4D', icon: 'Utensils', budget: 300 },
+  { id: 'cat-9', name: 'Salary & Earnings', color: '#2A9D8F', icon: 'Briefcase', isIncome: true },
+  { id: 'cat-10', name: 'Freelance & Investments', color: '#588157', icon: 'TrendingUp', isIncome: true },
+];
+
+export const initialTransactions = [
+  {
+    id: 'tx-101',
+    description: 'TechCorp Monthly Salary',
+    amount: 5200.00,
+    type: 'income',
+    categoryId: 'cat-9',
+    categoryName: 'Salary & Earnings',
+    date: '2026-11-01',
+    paymentMethod: 'Direct Deposit',
+    source: 'bank',
+    merchant: 'TechCorp Systems',
+    status: 'completed'
+  },
+  {
+    id: 'tx-102',
+    description: 'Monthly Apartment Rent',
+    amount: 1350.00,
+    type: 'expense',
+    categoryId: 'cat-1',
+    categoryName: 'Housing & Rent',
+    date: '2026-11-02',
+    paymentMethod: 'Bank Transfer',
+    source: 'manual',
+    merchant: 'Oakwood Residences',
+    status: 'completed'
+  },
+  {
+    id: 'tx-103',
+    description: 'Whole Foods Market',
+    amount: 142.60,
+    type: 'expense',
+    categoryId: 'cat-2',
+    categoryName: 'Groceries & Food',
+    date: '2026-11-03',
+    paymentMethod: 'Credit Card (Visa)',
+    source: 'receipt',
+    merchant: 'Whole Foods Market',
+    status: 'completed'
+  },
+  {
+    id: 'tx-104',
+    description: 'High-speed Fiber Internet',
+    amount: 79.99,
+    type: 'expense',
+    categoryId: 'cat-3',
+    categoryName: 'Utilities & Bills',
+    date: '2026-11-03',
+    paymentMethod: 'Auto-Debit',
+    source: 'manual',
+    merchant: 'Metronet Telecom',
+    status: 'completed'
+  },
+  {
+    id: 'tx-105',
+    description: 'Chevron Fuel Station',
+    amount: 54.20,
+    type: 'expense',
+    categoryId: 'cat-4',
+    categoryName: 'Transport & Fuel',
+    date: '2026-11-04',
+    paymentMethod: 'Credit Card (Amex)',
+    source: 'receipt',
+    merchant: 'Chevron',
+    status: 'completed'
+  },
+  {
+    id: 'tx-106',
+    description: 'Freelance UI/UX Consultation',
+    amount: 950.00,
+    type: 'income',
+    categoryId: 'cat-10',
+    categoryName: 'Freelance & Investments',
+    date: '2026-11-04',
+    paymentMethod: 'Stripe Direct',
+    source: 'bank',
+    merchant: 'Acme Digital Labs',
+    status: 'completed'
+  },
+  {
+    id: 'tx-107',
+    description: 'Trader Joe\'s Weekly Staples',
+    amount: 88.45,
+    type: 'expense',
+    categoryId: 'cat-2',
+    categoryName: 'Groceries & Food',
+    date: '2026-11-05',
+    paymentMethod: 'Debit Card',
+    source: 'receipt',
+    merchant: 'Trader Joe\'s',
+    status: 'completed'
+  },
+  {
+    id: 'tx-108',
+    description: 'Spotify Family Subscription',
+    amount: 16.99,
+    type: 'expense',
+    categoryId: 'cat-5',
+    categoryName: 'Entertainment & Leisure',
+    date: '2026-11-05',
+    paymentMethod: 'Credit Card (Visa)',
+    source: 'bank',
+    merchant: 'Spotify AB',
+    status: 'completed'
+  },
+  {
+    id: 'tx-109',
+    description: 'Bistro Greenery Dinner',
+    amount: 74.50,
+    type: 'expense',
+    categoryId: 'cat-8',
+    categoryName: 'Dining Out',
+    date: '2026-11-06',
+    paymentMethod: 'Credit Card (Amex)',
+    source: 'manual',
+    merchant: 'Bistro Greenery',
+    status: 'completed'
+  },
+  {
+    id: 'tx-110',
+    description: 'City Gym Membership',
+    amount: 45.00,
+    type: 'expense',
+    categoryId: 'cat-6',
+    categoryName: 'Health & Fitness',
+    date: '2026-11-06',
+    paymentMethod: 'Auto-Debit',
+    source: 'bank',
+    merchant: 'City Fitness Club',
+    status: 'completed'
+  },
+  {
+    id: 'tx-111',
+    description: 'Local Pharmacy Prescriptions',
+    amount: 32.15,
+    type: 'expense',
+    categoryId: 'cat-6',
+    categoryName: 'Health & Fitness',
+    date: '2026-11-07',
+    paymentMethod: 'Debit Card',
+    source: 'receipt',
+    merchant: 'CVS Pharmacy',
+    status: 'completed'
+  },
+  {
+    id: 'tx-112',
+    description: 'Electricity & Power Bill',
+    amount: 112.30,
+    type: 'expense',
+    categoryId: 'cat-3',
+    categoryName: 'Utilities & Bills',
+    date: '2026-11-07',
+    paymentMethod: 'Auto-Debit',
+    source: 'manual',
+    merchant: 'City Electric Utility',
+    status: 'completed'
+  }
+];
+
+export const initialBudgets = [
+  { id: 'b-1', categoryId: 'cat-1', categoryName: 'Housing & Rent', limit: 1400, color: '#C4DCE3' },
+  { id: 'b-2', categoryId: 'cat-2', categoryName: 'Groceries & Food', limit: 600, color: '#E07A5F' },
+  { id: 'b-3', categoryId: 'cat-3', categoryName: 'Utilities & Bills', limit: 250, color: '#3D5A80' },
+  { id: 'b-4', categoryId: 'cat-4', categoryName: 'Transport & Fuel', limit: 300, color: '#F4A261' },
+  { id: 'b-5', categoryId: 'cat-5', categoryName: 'Entertainment & Leisure', limit: 200, color: '#81B29A' },
+  { id: 'b-6', categoryId: 'cat-6', categoryName: 'Health & Fitness', limit: 150, color: '#9B5DE5' },
+  { id: 'b-7', categoryId: 'cat-8', categoryName: 'Dining Out', limit: 300, color: '#EE6C4D' },
+];
+
+export const initialRecurring = [
+  { id: 'rec-1', name: 'Apartment Rent', amount: 1350.00, frequency: 'Monthly', dueDate: '1st of month', category: 'Housing & Rent', status: 'Active' },
+  { id: 'rec-2', name: 'Metronet Fiber Internet', amount: 79.99, frequency: 'Monthly', dueDate: '3rd of month', category: 'Utilities & Bills', status: 'Active' },
+  { id: 'rec-3', name: 'Spotify Family Subscription', amount: 16.99, frequency: 'Monthly', dueDate: '5th of month', category: 'Entertainment & Leisure', status: 'Active' },
+  { id: 'rec-4', name: 'City Gym Membership', amount: 45.00, frequency: 'Monthly', dueDate: '6th of month', category: 'Health & Fitness', status: 'Active' },
+  { id: 'rec-5', name: 'City Electric Utility', amount: 115.00, frequency: 'Monthly', dueDate: '12th of month', category: 'Utilities & Bills', status: 'Upcoming' },
+  { id: 'rec-6', name: 'Cloud Storage Pro', amount: 9.99, frequency: 'Monthly', dueDate: '18th of month', category: 'Utilities & Bills', status: 'Upcoming' },
+];
+

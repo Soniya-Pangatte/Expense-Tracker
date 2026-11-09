@@ -1,0 +1,32 @@
+{
+  "name": "spendwise-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SpendWise - Smart Personal Finance & Expense Management System",
+  "scripts": {
+    "client:dev": "npm --prefix client run dev",
+    "client:build": "npm --prefix client run build",
+    "client:install": "npm --prefix client install",
+    "server:dev": "npm --prefix server run dev",
+    "server:start": "npm --prefix server run start",
+    "server:install": "npm --prefix server install",
+    "install:all": "npm --prefix client install && npm --prefix server install"
+  },
+  "keywords": [
+    "finance",
+    "expense-tracker",
+    "ocr",
+    "budget",
+    "react",
+    "vite"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@gsap/react": "^2.1.2",
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.2",
+    "gsap": "^3.15.1",
+    "three": "^0.187.0"
+  }
+}
