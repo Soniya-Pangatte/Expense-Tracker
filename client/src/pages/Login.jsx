@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Wallet, ArrowRight, ArrowLeft, Lock, Mail, AlertCircle, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Wallet, ArrowRight, ArrowLeft, Lock, Mail, AlertCircle, Sparkles, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/common/Button';
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, loginAsDemo, isConfigured } = useAuth();
+  const { login, loginAsDemo, loginAsDemoAdmin, isConfigured } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -50,6 +50,11 @@ export default function Login() {
   const handleDemoLogin = () => {
     loginAsDemo();
     navigate(from, { replace: true });
+  };
+
+  const handleDemoAdminLogin = () => {
+    loginAsDemoAdmin();
+    navigate('/admin/overview', { replace: true });
   };
 
   return (
@@ -161,15 +166,26 @@ export default function Login() {
             </div>
           </div>
 
-          <Button
-            type="button"
-            variant="secondary"
-            className="w-full py-2.5 text-xs font-semibold"
-            icon={Sparkles}
-            onClick={handleDemoLogin}
-          >
-            Explore with Demo Account
-          </Button>
+          <div className="space-y-2">
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full py-2.5 text-xs font-semibold"
+              icon={Sparkles}
+              onClick={handleDemoLogin}
+            >
+              Explore with Demo Account (User)
+            </Button>
+
+            <button
+              type="button"
+              onClick={handleDemoAdminLogin}
+              className="w-full py-2.5 px-3 rounded-xl border border-purple-500/30 bg-purple-500/5 hover:bg-purple-500/10 text-purple-700 dark:text-purple-300 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+            >
+              <ShieldCheck size={15} className="text-purple-600 dark:text-purple-400" />
+              <span>Preview Admin Portal (Demo Admin)</span>
+            </button>
+          </div>
 
           <div className="mt-6 text-center text-xs text-[#526C78] dark:text-[#83BDCF]">
             Don't have an account?{' '}

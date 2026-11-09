@@ -10,6 +10,17 @@ export const DEMO_USER = {
     full_name: 'Jane Doe',
   },
   isDemo: true,
+  role: 'user',
+};
+
+export const DEMO_ADMIN_USER = {
+  id: 'demo-admin-id-001',
+  email: 'admin@spendwise.io',
+  user_metadata: {
+    full_name: 'System Administrator',
+  },
+  isDemo: true,
+  role: 'admin',
 };
 
 export function AuthProvider({ children }) {
@@ -18,27 +29,50 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isDemoUser, setIsDemoUser] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isDemoAdmin, setIsDemoAdmin] = useState(false);
 
-  // Fetch or build user profile
+  // Fetch or build user profile and verify role
   const fetchUserProfile = async (currentUser) => {
     if (!currentUser) {
       setProfile(null);
+      setIsAdmin(false);
       return null;
     }
 
     if (currentUser.isDemo) {
+      const isAdm = currentUser.role === 'admin' || currentUser.email === 'admin@spendwise.io';
+      setIsAdmin(isAdm);
+      setIsDemoAdmin(isAdm);
       const demoProfile = {
         id: currentUser.id,
         email: currentUser.email,
-        full_name: currentUser.user_metadata?.full_name || 'Jane Doe',
+        full_name: currentUser.user_metadata?.full_name || (isAdm ? 'System Administrator' : 'Jane Doe'),
         avatar_url: null,
+        role: isAdm ? 'admin' : 'user',
       };
       setProfile(demoProfile);
       return demoProfile;
     }
 
+    let userRole = 'user';
+
     try {
       if (isSupabaseConfigured) {
+        // Fetch role from user_roles table
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role, is_active')
+          .eq('user_id', currentUser.id)
+          .maybeSingle();
+
+        if (roleData && roleData.role === 'admin' && roleData.is_active) {
+          userRole = 'admin';
+          setIsAdmin(true);
+        } else {
+          setIsAdmin(false);
+        }
+
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -46,8 +80,9 @@ export function AuthProvider({ children }) {
           .single();
 
         if (data && !error) {
-          setProfile(data);
-          return data;
+          const fullProfile = { ...data, role: userRole };
+          setProfile(fullProfile);
+          return fullProfile;
         }
       }
     } catch (err) {
@@ -60,6 +95,7 @@ export function AuthProvider({ children }) {
       email: currentUser.email,
       full_name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'User',
       avatar_url: currentUser.user_metadata?.avatar_url || null,
+      role: userRole,
     };
     setProfile(metaProfile);
     return metaProfile;
@@ -71,10 +107,23 @@ export function AuthProvider({ children }) {
     async function initializeAuth() {
       // Check if demo mode was previously active
       const savedDemo = localStorage.getItem('spendwise_demo_session');
+      if (savedDemo === 'admin') {
+        if (mounted) {
+          setUser(DEMO_ADMIN_USER);
+          setIsDemoUser(true);
+          setIsDemoAdmin(true);
+          setIsAdmin(true);
+          await fetchUserProfile(DEMO_ADMIN_USER);
+          setLoading(false);
+        }
+        return;
+      }
       if (savedDemo === 'true') {
         if (mounted) {
           setUser(DEMO_USER);
           setIsDemoUser(true);
+          setIsDemoAdmin(false);
+          setIsAdmin(false);
           await fetchUserProfile(DEMO_USER);
           setLoading(false);
         }
@@ -209,12 +258,32 @@ export function AuthProvider({ children }) {
   const loginAsDemo = () => {
     localStorage.setItem('spendwise_demo_session', 'true');
     setIsDemoUser(true);
+    setIsDemoAdmin(false);
+    setIsAdmin(false);
     setUser(DEMO_USER);
     setProfile({
       id: DEMO_USER.id,
       email: DEMO_USER.email,
       full_name: 'Jane Doe',
       avatar_url: null,
+      role: 'user',
+    });
+    return true;
+  };
+
+  // 3b. DEMO ADMIN LOGIN (for evaluating the Phase 7 Admin Dashboard)
+  const loginAsDemoAdmin = () => {
+    localStorage.setItem('spendwise_demo_session', 'admin');
+    setIsDemoUser(true);
+    setIsDemoAdmin(true);
+    setIsAdmin(true);
+    setUser(DEMO_ADMIN_USER);
+    setProfile({
+      id: DEMO_ADMIN_USER.id,
+      email: DEMO_ADMIN_USER.email,
+      full_name: 'System Administrator',
+      avatar_url: null,
+      role: 'admin',
     });
     return true;
   };
@@ -233,6 +302,8 @@ export function AuthProvider({ children }) {
       setSession(null);
       setProfile(null);
       setIsDemoUser(false);
+      setIsAdmin(false);
+      setIsDemoAdmin(false);
     }
   };
 
@@ -271,10 +342,13 @@ export function AuthProvider({ children }) {
     profile,
     loading,
     isDemoUser,
+    isAdmin,
+    isDemoAdmin,
     isConfigured: isSupabaseConfigured,
     signup,
     login,
     loginAsDemo,
+    loginAsDemoAdmin,
     logout,
     resetPassword,
     updatePassword,

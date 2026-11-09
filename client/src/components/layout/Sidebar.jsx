@@ -16,7 +16,8 @@ import {
   ChevronRight,
   Edit2,
   Plus,
-  Sparkles
+  Sparkles,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTransactions } from '../../context/TransactionContext';
@@ -39,7 +40,7 @@ const navItems = [
 export default function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, profile, logout, isDemoUser } = useAuth();
+  const { user, profile, logout, isDemoUser, isAdmin } = useAuth();
   const { stats } = useTransactions();
   const { formatCurrency } = useCurrency();
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
@@ -154,6 +155,28 @@ export default function Sidebar({ isOpen, onClose }) {
               </NavLink>
             );
           })}
+
+          {/* Admin Portal Shortcut (Visible only to authorized Administrators) */}
+          {isAdmin && (
+            <div className="pt-3 mt-2 border-t border-[#C4DCE3]/60 dark:border-[#365765]/60">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 px-3 mb-1.5 flex items-center gap-1">
+                <ShieldCheck size={12} /> Admin Controls
+              </div>
+              <NavLink
+                to="/admin/overview"
+                onClick={() => {
+                  if (window.innerWidth < 1024) onClose();
+                }}
+                className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all group bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border border-purple-500/20 text-purple-700 dark:text-purple-300 hover:bg-purple-500/20 shadow-2xs"
+              >
+                <ShieldCheck size={18} className="text-purple-600 dark:text-purple-400" />
+                <span className="flex-1">Admin Portal</span>
+                <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-purple-600 text-white shadow-xs">
+                  Admin
+                </span>
+              </NavLink>
+            </div>
+          )}
         </nav>
 
         {/* Dynamic Monthly Budget Progress Card */}

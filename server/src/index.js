@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import aiRoutes from './routes/aiRoutes.js';
 import receiptRoutes from './routes/receiptRoutes.js';
 import bankImportRoutes from './routes/bankImportRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 
 dotenv.config();
 
@@ -44,6 +45,9 @@ app.use('/api/receipts', receiptRoutes);
 
 // Smart Bank Statement Import Routes
 app.use('/api/bank-imports', bankImportRoutes);
+
+// Admin Dashboard & RBAC Routes
+app.use('/api/admin', adminRoutes);
 
 // Generic 404 handler
 app.use((req, res) => {

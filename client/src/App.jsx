@@ -8,9 +8,11 @@ import { TransactionProvider } from './context/TransactionContext';
 // Auth Route Guards
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import PublicRoute from './components/auth/PublicRoute';
+import AdminRoute from './components/auth/AdminRoute';
 
 // Layout
 import MainLayout from './components/layout/MainLayout';
+import AdminLayout from './components/admin/AdminLayout';
 
 // Public Landing Page
 import LandingPage from './pages/LandingPage';
@@ -32,6 +34,13 @@ import Budgets from './pages/Budgets';
 import RecurringExpenses from './pages/RecurringExpenses';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
+
+// Admin Portal Pages (Admin Protected)
+import AdminOverview from './pages/admin/AdminOverview';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminAnalytics from './pages/admin/AdminAnalytics';
+import AdminSystem from './pages/admin/AdminSystem';
+import AdminSettings from './pages/admin/AdminSettings';
 
 export default function App() {
   return (
@@ -93,6 +102,22 @@ export default function App() {
                   <Route path="/recurring-expenses" element={<RecurringExpenses />} />
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/settings" element={<Settings />} />
+                </Route>
+
+                {/* Admin Portal Protected Routes (Requires Admin role) */}
+                <Route
+                  element={
+                    <AdminRoute>
+                      <AdminLayout />
+                    </AdminRoute>
+                  }
+                >
+                  <Route path="/admin" element={<Navigate to="/admin/overview" replace />} />
+                  <Route path="/admin/overview" element={<AdminOverview />} />
+                  <Route path="/admin/users" element={<AdminUsers />} />
+                  <Route path="/admin/analytics" element={<AdminAnalytics />} />
+                  <Route path="/admin/system" element={<AdminSystem />} />
+                  <Route path="/admin/settings" element={<AdminSettings />} />
                 </Route>
 
                 {/* Catch-all fallback */}
