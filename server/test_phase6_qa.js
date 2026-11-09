@@ -258,3 +258,4 @@ runTest('3.3: User Isolation in FinancialAnalysisEngine Queries', () => {
 console.log('================================================================');
 console.log(`  ALL ${totalTests} QA TESTS PASSED! (${passedTests}/${totalTests})`);
 console.log('================================================================');
+
