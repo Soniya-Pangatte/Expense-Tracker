@@ -1,6 +1,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, ArrowUpRight as IncomeIcon, ArrowDownLeft as ExpenseIcon, ScanLine, Landmark, Edit3 } from 'lucide-react';
+import {
+  ArrowUpRight,
+  ArrowUpRight as IncomeIcon,
+  ArrowDownLeft as ExpenseIcon,
+  ScanLine,
+  Landmark,
+  Edit3,
+  Repeat,
+  Layers,
+} from 'lucide-react';
 import Card from '../common/Card';
 import Badge from '../common/Badge';
 import { useCurrency } from '../../context/CurrencyContext';
@@ -9,14 +18,12 @@ export default function RecentTransactionsTable({ transactions = [] }) {
   const { formatCurrency } = useCurrency();
 
   const getSourceIcon = (source) => {
-    switch (source) {
-      case 'receipt':
-        return <ScanLine size={13} title="OCR Receipt Scan" className="text-purple-500" />;
-      case 'bank':
-        return <Landmark size={13} title="Bank Import" className="text-blue-500" />;
-      default:
-        return <Edit3 size={13} title="Manual Entry" className="text-stone-400" />;
-    }
+    const s = (source || 'manual').toLowerCase();
+    if (s.includes('receipt')) return <ScanLine size={13} title="Receipt Scan" className="text-purple-500" />;
+    if (s.includes('bank')) return <Landmark size={13} title="Bank Statement Import" className="text-blue-500" />;
+    if (s.includes('recurring')) return <Repeat size={13} title="Recurring Transaction" className="text-amber-500" />;
+    if (s.includes('other')) return <Layers size={13} title="Other Source" className="text-slate-400" />;
+    return <Edit3 size={13} title="Manual Entry" className="text-stone-400" />;
   };
 
   return (

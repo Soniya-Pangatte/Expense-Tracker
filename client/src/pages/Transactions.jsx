@@ -18,9 +18,13 @@ import {
   ArrowUpDown,
   RotateCcw,
   CheckCircle2,
+  CreditCard,
+  Layers,
+  Repeat,
 } from 'lucide-react';
 import { useTransactions } from '../context/TransactionContext';
 import { useCurrency } from '../context/CurrencyContext';
+import { PAYMENT_METHODS, TRANSACTION_SOURCES, normalizeSourceValue, getSourceLabel } from '../data/transactionOptions';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
@@ -39,6 +43,8 @@ export default function Transactions() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('all');
+  const [selectedSource, setSelectedSource] = useState('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [sortBy, setSortBy] = useState('date-desc'); // date-desc, date-asc, amount-desc, amount-asc
@@ -63,6 +69,8 @@ export default function Transactions() {
     setSearchTerm('');
     setSelectedCategory('all');
     setSelectedType('all');
+    setSelectedPaymentMethod('all');
+    setSelectedSource('all');
     setStartDate('');
     setEndDate('');
     setSortBy('date-desc');
@@ -73,6 +81,8 @@ export default function Transactions() {
     Boolean(searchTerm) ||
     selectedCategory !== 'all' ||
     selectedType !== 'all' ||
+    selectedPaymentMethod !== 'all' ||
+    selectedSource !== 'all' ||
     Boolean(startDate) ||
     Boolean(endDate) ||
     sortBy !== 'date-desc';
@@ -111,7 +121,30 @@ export default function Transactions() {
         matchesDate = matchesDate && tx.date <= endDate;
       }
 
-      return matchesSearch && matchesCategory && matchesType && matchesDate;
+      // Payment Method filter (handles partial matches e.g. "Credit Card" matches "Credit Card (Visa)")
+      const txMethod = (tx.paymentMethod || tx.payment_method || '').toLowerCase();
+      const matchesPaymentMethod =
+        selectedPaymentMethod === 'all' ||
+        tx.paymentMethod === selectedPaymentMethod ||
+        tx.payment_method === selectedPaymentMethod ||
+        txMethod === selectedPaymentMethod.toLowerCase() ||
+        txMethod.includes(selectedPaymentMethod.toLowerCase());
+
+      // Transaction Source filter
+      const txSource = normalizeSourceValue(tx.source);
+      const matchesSource =
+        selectedSource === 'all' ||
+        txSource === selectedSource ||
+        tx.source === selectedSource;
+
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        matchesType &&
+        matchesDate &&
+        matchesPaymentMethod &&
+        matchesSource
+      );
     });
 
     // 2. Sort Transactions
@@ -140,6 +173,8 @@ export default function Transactions() {
     searchTerm,
     selectedCategory,
     selectedType,
+    selectedPaymentMethod,
+    selectedSource,
     startDate,
     endDate,
     sortBy,
@@ -156,26 +191,40 @@ export default function Transactions() {
     return filteredAndSortedTransactions.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredAndSortedTransactions, safeCurrentPage]);
 
-  const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE + 1;
+  const startIndex = totalItems > 0 ? (safeCurrentPage - 1) * ITEMS_PER_PAGE + 1 : 0;
   const endIndex = Math.min(safeCurrentPage * ITEMS_PER_PAGE, totalItems);
 
   const getSourceBadge = (source) => {
-    switch (source) {
+    const s = normalizeSourceValue(source);
+    switch (s) {
       case 'receipt':
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 px-2 py-0.5 rounded-md">
-            <ScanLine size={12} /> Receipt OCR
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 px-2 py-0.5 rounded-md">
+            <ScanLine size={12} /> Receipt Scan
           </span>
         );
       case 'bank':
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded-md">
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded-md">
             <Landmark size={12} /> Bank Import
           </span>
         );
+      case 'recurring':
+        return (
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md">
+            <Repeat size={12} /> Recurring
+          </span>
+        );
+      case 'other':
+        return (
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#526C78] dark:text-[#83BDCF] bg-[#D6EBF3]/40 dark:bg-[#1B3541] px-2 py-0.5 rounded-md">
+            <Layers size={12} /> Other
+          </span>
+        );
+      case 'manual':
       default:
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#526C78] dark:text-[#83BDCF] bg-[#D6EBF3]/40 dark:bg-[#1B3541] px-2 py-0.5 rounded-md">
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#526C78] dark:text-[#83BDCF] bg-[#D6EBF3]/40 dark:bg-[#1B3541] px-2 py-0.5 rounded-md">
             <Edit3 size={12} /> Manual
           </span>
         );
@@ -199,7 +248,7 @@ export default function Transactions() {
             Transaction Ledger
           </h2>
           <p className="text-xs sm:text-sm text-[#526C78] dark:text-[#83BDCF] mt-0.5">
-            Complete transaction record, filtering, searching, and audit history.
+            Unified ledger with multi-criteria filtering by payment method, source, category, and date.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -226,7 +275,8 @@ export default function Transactions() {
       </div>
 
       {/* Filter and Search Bar */}
-      <Card className="!p-4 space-y-3">
+      <Card className="!p-4 space-y-3.5">
+        {/* Row 1: Search & Type & Sort */}
         <div className="flex flex-col md:flex-row items-center gap-3">
           {/* Search Field */}
           <div className="relative flex-1 w-full">
@@ -254,7 +304,7 @@ export default function Transactions() {
             )}
           </div>
 
-          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full md:w-auto">
+          <div className="flex items-center gap-2 w-full md:w-auto">
             {/* Type Filter */}
             <select
               value={selectedType}
@@ -267,23 +317,6 @@ export default function Transactions() {
               <option value="all">All Types</option>
               <option value="expense">Expenses Only</option>
               <option value="income">Income Only</option>
-            </select>
-
-            {/* Category Filter */}
-            <select
-              value={selectedCategory}
-              onChange={(e) => {
-                setSelectedCategory(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="text-xs sm:text-sm bg-[#D6EBF3]/40 dark:bg-[#1B3541] border border-[#C4DCE3] dark:border-[#365765] rounded-xl px-3 py-2 text-[#243D49] dark:text-[#D6EBF3] focus:outline-none focus:ring-2 focus:ring-[#447F98]"
-            >
-              <option value="all">All Categories</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
             </select>
 
             {/* Sort Dropdown */}
@@ -300,8 +333,77 @@ export default function Transactions() {
           </div>
         </div>
 
-        {/* Date Range & Reset Filters */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#C4DCE3]/50 dark:border-[#365765]/50 text-xs">
+        {/* Row 2: Category, Payment Method, and Transaction Source Filters */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          {/* Category Filter */}
+          <div>
+            <label className="block text-[11px] font-semibold text-[#526C78] dark:text-[#83BDCF] mb-1 flex items-center gap-1">
+              <Filter size={11} /> Category:
+            </label>
+            <select
+              value={selectedCategory}
+              onChange={(e) => {
+                setSelectedCategory(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full text-xs sm:text-sm bg-[#D6EBF3]/40 dark:bg-[#1B3541] border border-[#C4DCE3] dark:border-[#365765] rounded-xl px-3 py-2 text-[#243D49] dark:text-[#D6EBF3] focus:outline-none focus:ring-2 focus:ring-[#447F98]"
+            >
+              <option value="all">All Categories</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Payment Method Filter */}
+          <div>
+            <label className="block text-[11px] font-semibold text-[#526C78] dark:text-[#83BDCF] mb-1 flex items-center gap-1">
+              <CreditCard size={11} /> Payment Method:
+            </label>
+            <select
+              value={selectedPaymentMethod}
+              onChange={(e) => {
+                setSelectedPaymentMethod(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full text-xs sm:text-sm bg-[#D6EBF3]/40 dark:bg-[#1B3541] border border-[#C4DCE3] dark:border-[#365765] rounded-xl px-3 py-2 text-[#243D49] dark:text-[#D6EBF3] focus:outline-none focus:ring-2 focus:ring-[#447F98]"
+            >
+              <option value="all">All Payment Methods</option>
+              {PAYMENT_METHODS.map((method) => (
+                <option key={method} value={method}>
+                  {method}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Transaction Source Filter */}
+          <div>
+            <label className="block text-[11px] font-semibold text-[#526C78] dark:text-[#83BDCF] mb-1 flex items-center gap-1">
+              <Layers size={11} /> Transaction Source:
+            </label>
+            <select
+              value={selectedSource}
+              onChange={(e) => {
+                setSelectedSource(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full text-xs sm:text-sm bg-[#D6EBF3]/40 dark:bg-[#1B3541] border border-[#C4DCE3] dark:border-[#365765] rounded-xl px-3 py-2 text-[#243D49] dark:text-[#D6EBF3] focus:outline-none focus:ring-2 focus:ring-[#447F98]"
+            >
+              <option value="all">All Sources</option>
+              {TRANSACTION_SOURCES.map((source) => (
+                <option key={source.value} value={source.value}>
+                  {source.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Row 3: Date Range & Reset Filters */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-[#C4DCE3]/50 dark:border-[#365765]/50 text-xs">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[#526C78] dark:text-[#83BDCF] font-medium flex items-center gap-1">
               <Calendar size={13} /> Date Range:
@@ -343,7 +445,7 @@ export default function Transactions() {
       {/* Transactions Table */}
       <Card className="!p-0 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[700px]">
+          <table className="w-full text-left border-collapse min-w-[750px]">
             <thead>
               <tr className="border-b border-[#C4DCE3] dark:border-[#365765] bg-[#B9D9E1]/30 dark:bg-[#1B3541]/60 text-[11px] uppercase tracking-wider text-[#526C78] dark:text-[#83BDCF]">
                 <th className="px-6 py-3.5 font-semibold">Transaction / Payee</th>
@@ -365,13 +467,13 @@ export default function Transactions() {
                       </p>
                       <p className="text-xs text-[#526C78] dark:text-[#83BDCF]">
                         {hasActiveFilters
-                          ? 'Try clearing your search query or broadening your date/category filters.'
+                          ? 'Try clearing your search query or broadening your payment method, source, or date filters.'
                           : 'Your ledger is currently empty. Record your first transaction to start tracking.'}
                       </p>
                       {hasActiveFilters ? (
                         <div className="pt-2">
                           <Button variant="outline" size="sm" onClick={handleResetFilters}>
-                            Clear Filters
+                            Clear All Filters
                           </Button>
                         </div>
                       ) : (
@@ -430,7 +532,9 @@ export default function Transactions() {
 
                       {/* Method */}
                       <td className="px-4 py-3.5 text-[#526C78] dark:text-[#83BDCF]">
-                        {tx.paymentMethod || tx.payment_method || 'Credit Card'}
+                        <span className="inline-flex items-center gap-1 font-medium">
+                          {tx.paymentMethod || tx.payment_method || 'Other'}
+                        </span>
                       </td>
 
                       {/* Source */}

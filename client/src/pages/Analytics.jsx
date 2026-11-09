@@ -14,7 +14,7 @@ export default function Analytics() {
   const handleExportCSV = () => {
     const headers = ['ID,Description,Amount,Currency,Type,Category,Date,PaymentMethod,Merchant,Source'];
     const rows = transactions.map((t) =>
-      `"${t.id}","${t.description}",${t.amount},"${t.currency || currency}","${t.type}","${t.categoryName}","${t.date}","${t.paymentMethod}","${t.merchant || ''}","${t.source}"`
+      `"${t.id}","${t.description}",${t.amount},"${t.currency || currency}","${t.type}","${t.categoryName || t.category_name || 'General'}","${t.date}","${t.paymentMethod || t.payment_method || 'Other'}","${t.merchant || ''}","${t.source || 'manual'}"`
     );
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers, ...rows].join('\n');
     const encodedUri = encodeURI(csvContent);

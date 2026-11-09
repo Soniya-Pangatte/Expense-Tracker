@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Check, AlertCircle, FileText } from 'lucide-react';
 import { useTransactions } from '../context/TransactionContext';
 import { useCurrency, SUPPORTED_CURRENCIES } from '../context/CurrencyContext';
+import { PAYMENT_METHODS, TRANSACTION_SOURCES, normalizeSourceValue } from '../data/transactionOptions';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 
@@ -21,7 +22,8 @@ export default function AddExpense() {
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState(defaultCurrency);
   const [categoryId, setCategoryId] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('Credit Card (Visa)');
+  const [paymentMethod, setPaymentMethod] = useState('UPI');
+  const [source, setSource] = useState('manual');
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -41,7 +43,8 @@ export default function AddExpense() {
         setAmount(existing.amount !== undefined ? String(existing.amount) : '');
         setCurrency(existing.currency || defaultCurrency);
         setCategoryId(existing.categoryId || existing.category_id || '');
-        setPaymentMethod(existing.paymentMethod || existing.payment_method || 'Credit Card (Visa)');
+        setPaymentMethod(existing.paymentMethod || existing.payment_method || 'Credit Card');
+        setSource(normalizeSourceValue(existing.source));
         setDate(existing.date || new Date().toISOString().split('T')[0]);
         setNotes(existing.notes || '');
       }
@@ -89,9 +92,9 @@ export default function AddExpense() {
         categoryId: selectedCat?.id,
         categoryName: selectedCat?.name || 'General',
         date,
-        paymentMethod,
+        paymentMethod: paymentMethod || 'Other',
+        source: source || 'manual',
         notes: notes.trim() || null,
-        source: 'manual',
       };
 
       if (isEditMode) {
@@ -263,36 +266,55 @@ export default function AddExpense() {
             </div>
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-[#526C78] dark:text-[#83BDCF] mb-1.5">
-                Payment Method
+                Payment Method *
               </label>
               <select
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value)}
                 className="w-full px-4 py-2.5 text-sm bg-[#D6EBF3]/50 dark:bg-[#1B3541] border border-[#C4DCE3] dark:border-[#365765] rounded-xl text-[#243D49] dark:text-[#D6EBF3] focus:outline-none focus:ring-2 focus:ring-[#447F98]"
               >
-                <option value="UPI / Online">UPI / Online</option>
-                <option value="Credit Card (Visa)">Credit Card (Visa)</option>
-                <option value="Credit Card (Mastercard)">Credit Card (Mastercard)</option>
-                <option value="Debit Card">Debit Card</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Cash">Cash</option>
-                <option value="Direct Deposit">Direct Deposit</option>
+                {PAYMENT_METHODS.map((method) => (
+                  <option key={method} value={method}>
+                    {method}
+                  </option>
+                ))}
+                {paymentMethod && !PAYMENT_METHODS.includes(paymentMethod) && (
+                  <option value={paymentMethod}>{paymentMethod}</option>
+                )}
               </select>
             </div>
           </div>
 
-          {/* Date */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-[#526C78] dark:text-[#83BDCF] mb-1.5">
-              Date *
-            </label>
-            <input
-              type="date"
-              required
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full px-4 py-2.5 text-sm bg-[#D6EBF3]/50 dark:bg-[#1B3541] border border-[#C4DCE3] dark:border-[#365765] rounded-xl text-[#243D49] dark:text-[#D6EBF3] focus:outline-none focus:ring-2 focus:ring-[#447F98]"
-            />
+          {/* Date & Source */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-[#526C78] dark:text-[#83BDCF] mb-1.5">
+                Date *
+              </label>
+              <input
+                type="date"
+                required
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full px-4 py-2.5 text-sm bg-[#D6EBF3]/50 dark:bg-[#1B3541] border border-[#C4DCE3] dark:border-[#365765] rounded-xl text-[#243D49] dark:text-[#D6EBF3] focus:outline-none focus:ring-2 focus:ring-[#447F98]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-[#526C78] dark:text-[#83BDCF] mb-1.5">
+                Transaction Source
+              </label>
+              <select
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                className="w-full px-4 py-2.5 text-sm bg-[#D6EBF3]/50 dark:bg-[#1B3541] border border-[#C4DCE3] dark:border-[#365765] rounded-xl text-[#243D49] dark:text-[#D6EBF3] focus:outline-none focus:ring-2 focus:ring-[#447F98]"
+              >
+                {TRANSACTION_SOURCES.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Notes */}

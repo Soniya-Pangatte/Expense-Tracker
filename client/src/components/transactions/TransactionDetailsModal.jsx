@@ -13,8 +13,14 @@ import {
   Trash2,
   Clock,
   ShieldCheck,
+  Repeat,
+  Layers,
+  Wallet,
+  Banknote,
+  Smartphone,
 } from 'lucide-react';
 import { useCurrency } from '../../context/CurrencyContext';
+import { getSourceLabel } from '../../data/transactionOptions';
 import Button from '../common/Button';
 import Badge from '../common/Badge';
 
@@ -32,26 +38,49 @@ export default function TransactionDetailsModal({
   const isIncome = transaction.type === 'income';
 
   const getSourceBadge = (source) => {
-    switch (source) {
-      case 'receipt':
-        return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 px-2.5 py-1 rounded-lg">
-            <ScanLine size={13} /> Receipt OCR
-          </span>
-        );
-      case 'bank':
-        return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-1 rounded-lg">
-            <Landmark size={13} /> Bank Import
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#526C78] dark:text-[#83BDCF] bg-[#D6EBF3]/50 dark:bg-[#1B3541] px-2.5 py-1 rounded-lg">
-            <Edit3 size={13} /> Manual Entry
-          </span>
-        );
+    const s = (source || 'manual').toLowerCase();
+    if (s.includes('receipt')) {
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 px-2.5 py-1 rounded-lg">
+          <ScanLine size={13} /> Receipt Scan
+        </span>
+      );
     }
+    if (s.includes('bank')) {
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-1 rounded-lg">
+          <Landmark size={13} /> Bank Statement Import
+        </span>
+      );
+    }
+    if (s.includes('recurring')) {
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 rounded-lg">
+          <Repeat size={13} /> Recurring Transaction
+        </span>
+      );
+    }
+    if (s.includes('other')) {
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#526C78] dark:text-[#83BDCF] bg-[#D6EBF3]/40 dark:bg-[#1B3541] px-2.5 py-1 rounded-lg">
+          <Layers size={13} /> Other
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#526C78] dark:text-[#83BDCF] bg-[#D6EBF3]/50 dark:bg-[#1B3541] px-2.5 py-1 rounded-lg">
+        <Edit3 size={13} /> Manual Entry
+      </span>
+    );
+  };
+
+  const getPaymentMethodIcon = (method) => {
+    const m = (method || '').toLowerCase();
+    if (m.includes('cash')) return <Banknote size={14} className="text-emerald-600 dark:text-emerald-400" />;
+    if (m.includes('upi')) return <Smartphone size={14} className="text-[#447F98] dark:text-[#83BDCF]" />;
+    if (m.includes('wallet')) return <Wallet size={14} className="text-amber-600 dark:text-amber-400" />;
+    if (m.includes('bank')) return <Landmark size={14} className="text-blue-600 dark:text-blue-400" />;
+    return <CreditCard size={14} className="text-[#526C78] dark:text-[#83BDCF]" />;
   };
 
   return (
@@ -95,12 +124,12 @@ export default function TransactionDetailsModal({
           >
             {isIncome ? '+' : '-'}{formatCurrency(transaction.amount, transaction.currency || 'INR')}
           </span>
-          <p className="text-sm font-semibold text-[#526C78] dark:text-[#83BDCF] mt-1">
+          <p className="text-sm font-semibold text-[#243D49] dark:text-[#D6EBF3] mt-1">
             {transaction.description}
           </p>
           {transaction.merchant && transaction.merchant !== transaction.description && (
-            <p className="text-xs text-[#758D97] dark:text-[#83BDCF]/80 mt-0.5">
-              Merchant: {transaction.merchant}
+            <p className="text-xs text-[#526C78] dark:text-[#83BDCF] mt-0.5">
+              Payee / Merchant: {transaction.merchant}
             </p>
           )}
         </div>
@@ -132,14 +161,15 @@ export default function TransactionDetailsModal({
             <span className="text-[#526C78] dark:text-[#83BDCF] flex items-center gap-1.5 font-medium">
               <CreditCard size={14} /> Payment Method
             </span>
-            <span className="font-semibold text-[#243D49] dark:text-[#D6EBF3]">
+            <span className="font-semibold text-[#243D49] dark:text-[#D6EBF3] flex items-center gap-1.5">
+              {getPaymentMethodIcon(transaction.paymentMethod || transaction.payment_method)}
               {transaction.paymentMethod || transaction.payment_method || 'Credit Card'}
             </span>
           </div>
 
           <div className="flex items-center justify-between py-1.5 border-b border-[#C4DCE3]/50 dark:border-[#365765]/50">
             <span className="text-[#526C78] dark:text-[#83BDCF] flex items-center gap-1.5 font-medium">
-              <Clock size={14} /> Origin Source
+              <Clock size={14} /> Transaction Source
             </span>
             {getSourceBadge(transaction.source)}
           </div>
@@ -156,7 +186,7 @@ export default function TransactionDetailsModal({
           {/* Notes */}
           <div className="pt-1">
             <span className="block text-[#526C78] dark:text-[#83BDCF] font-medium mb-1 flex items-center gap-1.5">
-              <FileText size={14} /> Notes
+              <FileText size={14} /> Notes & Remarks
             </span>
             <div className="p-3 rounded-xl bg-[#D6EBF3]/40 dark:bg-[#1B3541] text-[#243D49] dark:text-[#D6EBF3] text-xs">
               {transaction.notes ? transaction.notes : <span className="italic text-[#758D97]">No notes attached to this transaction.</span>}
@@ -199,4 +229,3 @@ export default function TransactionDetailsModal({
     </div>
   );
 }
-
