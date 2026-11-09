@@ -1,231 +1,418 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Download,
-  BarChart2,
-  TrendingUp,
   Calendar,
-  AlertTriangle,
-  CheckCircle2,
-  PieChart,
-  Repeat,
+  FileSpreadsheet,
+  Printer,
+  Sparkles,
+  TrendingUp,
+  TrendingDown,
+  Layers,
   ArrowUpRight,
+  ArrowDownLeft,
+  DollarSign,
+  PieChart,
+  Filter,
+  CheckCircle2,
+  AlertTriangle,
+  RotateCcw,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { useTransactions } from '../context/TransactionContext';
-import { useCurrency } from '../context/CurrencyContext';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
-import SpendingTrendChart from '../components/dashboard/SpendingTrendChart';
-import CategoryBreakdownChart from '../components/dashboard/CategoryBreakdownChart';
-import BudgetVsActualChart from '../components/dashboard/BudgetVsActualChart';
+import Badge from '../components/common/Badge';
+import { useTransactions } from '../context/TransactionContext';
+import { useCurrency } from '../context/CurrencyContext';
+import {
+  DATE_PRESETS,
+  getDateRangeBoundaries,
+  getPreviousPeriodBoundaries,
+  formatReadableDate,
+  calculateFinancialAnalytics,
+  exportToCSV,
+  exportToExcel,
+  openPrintablePDFReport,
+} from '../services/analyticsService';
+import IncomeExpenseAnalysisChart from '../components/analytics/IncomeExpenseAnalysisChart';
+import CategoryAnalysisSection from '../components/analytics/CategoryAnalysisSection';
+import SavingsAnalysisWidget from '../components/analytics/SavingsAnalysisWidget';
+import BudgetPerformanceWidget from '../components/analytics/BudgetPerformanceWidget';
+import FinancialInsightsBanner from '../components/analytics/FinancialInsightsBanner';
+import TransactionDrillDownModal from '../components/analytics/TransactionDrillDownModal';
 
 export default function Analytics() {
-  const { stats, transactions, selectedBudgetMonth } = useTransactions();
-  const { currency, formatRawCurrency } = useCurrency();
+  const {
+    transactions,
+    categories,
+    budgets,
+    monthlyBudgetsList,
+  } = useTransactions();
+  const { currency, convertAmount, formatAmount, formatRawCurrency } = useCurrency();
 
-  const handleExportCSV = () => {
-    const headers = ['ID,Description,Amount,Currency,Type,Category,Date,PaymentMethod,Merchant,Source'];
-    const rows = transactions.map((t) =>
-      `"${t.id}","${t.description}",${t.amount},"${t.currency || currency}","${t.type}","${t.categoryName || t.category_name || 'General'}","${t.date}","${t.paymentMethod || t.payment_method || 'Other'}","${t.merchant || ''}","${t.source || 'manual'}"`
-    );
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers, ...rows].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `SpendWise_Export_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  // Date Range Filter States
+  const [activePreset, setActivePreset] = useState('this_month');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+
+  // Drill-down Modal State
+  const [drillDownCategory, setDrillDownCategory] = useState(null); // null = all, or category name
+  const [isDrillDownOpen, setIsDrillDownOpen] = useState(false);
+
+  // 1. Resolve Active Date Boundaries & Previous Period Boundaries
+  const dateRange = useMemo(() => {
+    return getDateRangeBoundaries(activePreset, customStart, customEnd);
+  }, [activePreset, customStart, customEnd]);
+
+  const prevDateRange = useMemo(() => {
+    return getPreviousPeriodBoundaries(dateRange.startDate, dateRange.endDate, activePreset);
+  }, [dateRange.startDate, dateRange.endDate, activePreset]);
+
+  // 2. Compute Comprehensive Financial Analytics
+  const analytics = useMemo(() => {
+    return calculateFinancialAnalytics({
+      transactions,
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate,
+      prevStartDate: prevDateRange.startDate,
+      prevEndDate: prevDateRange.endDate,
+      currency,
+      convertAmount,
+      categories,
+      budgets,
+      monthlyBudgetsList,
+    });
+  }, [
+    transactions,
+    dateRange.startDate,
+    dateRange.endDate,
+    prevDateRange.startDate,
+    prevDateRange.endDate,
+    currency,
+    convertAmount,
+    categories,
+    budgets,
+    monthlyBudgetsList,
+  ]);
+
+  // Handle Category Click for Drill-Down
+  const handleOpenDrillDown = (catName = null) => {
+    setDrillDownCategory(catName);
+    setIsDrillDownOpen(true);
   };
 
-  const avgDailySpend = stats.spendingTrends.length > 0
-    ? stats.totalExpenses / stats.spendingTrends.length
-    : stats.totalExpenses / 7;
+  // Export Handlers
+  const handleExportCSV = () => {
+    exportToCSV({
+      transactions: analytics.currentTransactions,
+      dateRangeLabel: dateRange.label,
+      currency,
+      convertAmount,
+    });
+  };
 
-  // Overspending and Warning categories
-  const overspentCategories = stats.budgetProgress.filter((b) => b.isOverBudget);
-  const warningCategories = stats.budgetProgress.filter((b) => b.isWarning);
+  const handleExportExcel = () => {
+    exportToExcel({
+      analytics,
+      transactions: analytics.currentTransactions,
+      dateRangeLabel: dateRange.label,
+      currency,
+      formatAmount,
+    });
+  };
+
+  const handleExportPDF = () => {
+    openPrintablePDFReport({
+      analytics,
+      transactions: analytics.currentTransactions,
+      dateRangeLabel: dateRange.label,
+      currency,
+      formatAmount,
+    });
+  };
 
   return (
-    <div className="space-y-6 pb-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 pb-12">
+      {/* Top Header & Export Center */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-semibold mb-2">
+            <PieChart size={12} />
+            <span>Advanced Financial Intelligence (Phase 5)</span>
+          </div>
           <h2 className="text-xl sm:text-2xl font-bold text-[#243D49] dark:text-[#D6EBF3] tracking-tight">
             Financial Analytics & Reports
           </h2>
           <p className="text-xs sm:text-sm text-[#526C78] dark:text-[#83BDCF] mt-0.5">
-            Deep dive into spending habits, budget vs actual variance, and exportable financial reports in {currency}.
+            Comprehensive cashflow insights, category distribution, budget adherence, and multi-format reports in {currency}.
           </p>
         </div>
-        <Button variant="outline" size="sm" icon={Download} onClick={handleExportCSV}>
-          Export CSV Ledger
-        </Button>
-      </div>
 
-      {/* Top 4 Analytical KPI Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="!p-4">
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] uppercase tracking-wider font-semibold text-[#526C78] dark:text-[#83BDCF]">
-              Budget Utilization
-            </p>
-            <span
-              className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
-                stats.budgetStatus === 'Exceeded'
-                  ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
-                  : stats.budgetStatus === 'Warning'
-                  ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
-                  : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-              }`}
-            >
-              {stats.hasMonthlyBudget ? `${stats.budgetUtilization}%` : 'Not set'}
-            </span>
-          </div>
-          <p className="text-xl sm:text-2xl font-bold text-[#243D49] dark:text-[#D6EBF3] mt-2">
-            {stats.hasMonthlyBudget ? formatRawCurrency(stats.selectedMonthExpenses) : formatRawCurrency(stats.totalExpenses)}
-          </p>
-          <p className="text-xs text-[#526C78] dark:text-[#83BDCF] mt-0.5">
-            {stats.hasMonthlyBudget
-              ? `of ${formatRawCurrency(stats.monthlyBudget)} budget cap`
-              : 'Total expenses recorded'}
-          </p>
-        </Card>
-
-        <Card className="!p-4">
-          <p className="text-[11px] uppercase tracking-wider font-semibold text-[#526C78] dark:text-[#83BDCF]">
-            Avg. Daily Spend
-          </p>
-          <p className="text-xl sm:text-2xl font-bold text-[#243D49] dark:text-[#D6EBF3] mt-2">
-            {formatRawCurrency(avgDailySpend)}
-          </p>
-          <p className="text-xs text-[#526C78] dark:text-[#83BDCF] mt-0.5">
-            Across active transaction days
-          </p>
-        </Card>
-
-        <Card className="!p-4">
-          <p className="text-[11px] uppercase tracking-wider font-semibold text-[#526C78] dark:text-[#83BDCF]">
-            Fixed Commitments
-          </p>
-          <p className="text-xl sm:text-2xl font-bold text-[#447F98] dark:text-[#83BDCF] mt-2">
-            {formatRawCurrency(stats.activeRecurringCommitment)}
-          </p>
-          <p className="text-xs text-[#526C78] dark:text-[#83BDCF] mt-0.5">
-            {stats.activeRecurringCount} active recurring bills / month
-          </p>
-        </Card>
-
-        <Card className="!p-4">
-          <p className="text-[11px] uppercase tracking-wider font-semibold text-[#526C78] dark:text-[#83BDCF]">
-            Net Savings Rate
-          </p>
-          <p className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-2">
-            {stats.savingsRate}%
-          </p>
-          <p className="text-xs text-[#526C78] dark:text-[#83BDCF] mt-0.5">
-            {stats.totalIncome > 0 ? `${formatRawCurrency(stats.availableBalance)} saved` : 'Track income to measure'}
-          </p>
-        </Card>
-      </div>
-
-      {/* Row 1 Charts: Trend & Category Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <SpendingTrendChart data={stats.spendingTrends} />
-        </div>
-        <div className="lg:col-span-1">
-          <CategoryBreakdownChart data={stats.categoryBreakdown} />
-        </div>
-      </div>
-
-      {/* Row 2: Budget vs Actual Spending Comparison & Variance Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <BudgetVsActualChart data={stats.budgetProgress} />
-        </div>
-
-        <div className="lg:col-span-1">
-          <Card
-            title="Budget Pacing & Variance"
-            subtitle="Categories requiring immediate attention"
-            action={
-              <Link
-                to="/budgets"
-                className="text-xs font-semibold text-[#447F98] dark:text-[#83BDCF] hover:underline flex items-center gap-0.5"
-              >
-                Manage <ArrowUpRight size={13} />
-              </Link>
-            }
+        {/* Export Buttons */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportCSV}
+            className="text-xs flex items-center gap-1.5"
+            title="Download CSV raw transaction ledger"
           >
-            <div className="space-y-3 pt-1">
-              {stats.budgetProgress.length === 0 ? (
-                <div className="text-center py-8 text-xs text-[#526C78] dark:text-[#83BDCF]">
-                  No category limits configured.
-                </div>
-              ) : overspentCategories.length === 0 && warningCategories.length === 0 ? (
-                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-800 dark:text-emerald-200 text-center space-y-1">
-                  <CheckCircle2 size={20} className="mx-auto text-emerald-600 dark:text-emerald-400 mb-1" />
-                  <p className="font-bold">All Categories On Track</p>
-                  <p className="text-[11px] opacity-90">
-                    No categories have exceeded or approached 75% of their spending allowance.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2.5">
-                  {/* Overspent categories */}
-                  {overspentCategories.map((c) => (
-                    <div
-                      key={c.id || c.categoryName}
-                      className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 flex items-center justify-between text-xs"
-                    >
-                      <div>
-                        <span className="font-bold text-rose-700 dark:text-rose-300">
-                          {c.categoryName}
-                        </span>
-                        <p className="text-[11px] text-[#526C78] dark:text-[#83BDCF]">
-                          Spent {formatRawCurrency(c.spent)} of {formatRawCurrency(c.limit)}
-                        </p>
-                      </div>
-                      <span className="font-extrabold text-[11px] px-2 py-0.5 rounded-full bg-rose-600 text-white">
-                        +{formatRawCurrency(c.spent - c.limit)}
-                      </span>
-                    </div>
-                  ))}
+            <Download size={14} className="text-[#447F98]" />
+            <span>Export CSV</span>
+          </Button>
 
-                  {/* Warning categories */}
-                  {warningCategories.map((c) => (
-                    <div
-                      key={c.id || c.categoryName}
-                      className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between text-xs"
-                    >
-                      <div>
-                        <span className="font-bold text-amber-700 dark:text-amber-300">
-                          {c.categoryName}
-                        </span>
-                        <p className="text-[11px] text-[#526C78] dark:text-[#83BDCF]">
-                          {c.percent}% used • {formatRawCurrency(c.remaining)} remaining
-                        </p>
-                      </div>
-                      <span className="font-extrabold text-[11px] px-2 py-0.5 rounded-full bg-amber-500 text-white">
-                        {c.percent}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportExcel}
+            className="text-xs flex items-center gap-1.5"
+            title="Download formatted Excel workbook (.xls)"
+          >
+            <FileSpreadsheet size={14} className="text-emerald-600" />
+            <span>Export Excel</span>
+          </Button>
 
-              {/* Bottom Quick Metric */}
-              <div className="pt-2 border-t border-[#C4DCE3]/60 dark:border-[#365765]/60 flex items-center justify-between text-xs text-[#526C78] dark:text-[#83BDCF]">
-                <span>Total Monitored Limits</span>
-                <span className="font-bold text-[#243D49] dark:text-[#D6EBF3]">
-                  {formatRawCurrency(stats.budgetProgress.reduce((sum, b) => sum + (b.limit || 0), 0))}
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleExportPDF}
+            className="text-xs flex items-center gap-1.5"
+            title="Open printable executive PDF statement"
+          >
+            <Printer size={14} />
+            <span>Print / PDF Report</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Date Range Preset Selector Bar */}
+      <Card className="p-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          {/* Preset Buttons */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {DATE_PRESETS.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setActivePreset(p.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                  activePreset === p.id
+                    ? 'bg-[#447F98] text-white shadow-xs'
+                    : 'bg-gray-100 dark:bg-[#152B35] text-[#526C78] dark:text-[#83BDCF] hover:text-[#243D49] dark:hover:text-[#D6EBF3]'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Active Date Label & Custom Pickers */}
+          <div className="flex flex-wrap items-center gap-3">
+            {activePreset === 'custom' ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={customStart || dateRange.startDate}
+                  onChange={(e) => setCustomStart(e.target.value)}
+                  className="px-2.5 py-1 rounded-lg border border-[#C4DCE3] dark:border-[#2C4E5E] bg-white dark:bg-[#172E38] text-xs text-[#243D49] dark:text-[#D6EBF3]"
+                />
+                <span className="text-xs text-gray-400">to</span>
+                <input
+                  type="date"
+                  value={customEnd || dateRange.endDate}
+                  onChange={(e) => setCustomEnd(e.target.value)}
+                  className="px-2.5 py-1 rounded-lg border border-[#C4DCE3] dark:border-[#2C4E5E] bg-white dark:bg-[#172E38] text-xs text-[#243D49] dark:text-[#D6EBF3]"
+                />
+              </div>
+            ) : (
+              <div className="text-xs text-[#526C78] dark:text-[#83BDCF] flex items-center gap-2">
+                <Calendar size={13} className="text-[#447F98]" />
+                <span className="font-semibold text-[#243D49] dark:text-[#D6EBF3]">
+                  {formatReadableDate(dateRange.startDate)} – {formatReadableDate(dateRange.endDate)}
+                </span>
+                <span className="text-[11px] opacity-75">
+                  ({prevDateRange.label}: {formatReadableDate(prevDateRange.startDate)} – {formatReadableDate(prevDateRange.endDate)})
                 </span>
               </div>
-            </div>
-          </Card>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      {/* Top 5 KPI Summary Analytical Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        {/* Total Income */}
+        <Card className="!p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-[#526C78] dark:text-[#83BDCF]">
+              Total Income
+            </span>
+            {analytics.prevTotalIncome > 0 && (
+              <span
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  analytics.incomePercentChange >= 0
+                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                    : 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
+                }`}
+              >
+                {analytics.incomePercentChange >= 0 ? '+' : ''}
+                {analytics.incomePercentChange}%
+              </span>
+            )}
+          </div>
+          <p className="text-xl sm:text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-2">
+            {formatRawCurrency(analytics.totalIncome)}
+          </p>
+          <p className="text-xs text-[#526C78] dark:text-[#83BDCF] mt-0.5">
+            Total inflows in period
+          </p>
+        </Card>
+
+        {/* Total Expenses */}
+        <Card className="!p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-[#526C78] dark:text-[#83BDCF]">
+              Total Expenses
+            </span>
+            {analytics.prevTotalExpenses > 0 && (
+              <span
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  analytics.expensePercentChange <= 0
+                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                    : 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
+                }`}
+              >
+                {analytics.expensePercentChange >= 0 ? '+' : ''}
+                {analytics.expensePercentChange}%
+              </span>
+            )}
+          </div>
+          <p className="text-xl sm:text-2xl font-bold font-mono text-rose-500 mt-2">
+            {formatRawCurrency(analytics.totalExpenses)}
+          </p>
+          <p className="text-xs text-[#526C78] dark:text-[#83BDCF] mt-0.5">
+            Total outflows in period
+          </p>
+        </Card>
+
+        {/* Net Savings */}
+        <Card className="!p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-[#526C78] dark:text-[#83BDCF]">
+              Net Savings
+            </span>
+            <span
+              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                analytics.netSavings >= 0
+                  ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                  : 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
+              }`}
+            >
+              {analytics.netSavings >= 0 ? 'Surplus' : 'Deficit'}
+            </span>
+          </div>
+          <p
+            className={`text-xl sm:text-2xl font-bold font-mono mt-2 ${
+              analytics.netSavings >= 0 ? 'text-[#00695C] dark:text-teal-400' : 'text-rose-600 dark:text-rose-400'
+            }`}
+          >
+            {formatRawCurrency(analytics.netSavings)}
+          </p>
+          <p className="text-xs text-[#526C78] dark:text-[#83BDCF] mt-0.5">
+            Income minus expenses
+          </p>
+        </Card>
+
+        {/* Savings Rate */}
+        <Card className="!p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-[#526C78] dark:text-[#83BDCF]">
+              Savings Rate
+            </span>
+            <span className="text-[10px] font-semibold text-gray-400">Target 20%</span>
+          </div>
+          <p
+            className={`text-xl sm:text-2xl font-bold mt-2 ${
+              analytics.savingsRate >= 20
+                ? 'text-emerald-500'
+                : analytics.savingsRate > 0
+                ? 'text-[#447F98] dark:text-[#629BB5]'
+                : 'text-rose-500'
+            }`}
+          >
+            {analytics.totalIncome > 0 ? `${analytics.savingsRate}%` : 'N/A'}
+          </p>
+          <p className="text-xs text-[#526C78] dark:text-[#83BDCF] mt-0.5">
+            {analytics.totalIncome > 0 ? 'Percentage of income' : 'No income recorded'}
+          </p>
+        </Card>
+
+        {/* Avg Monthly Expenses */}
+        <Card className="!p-4 col-span-1 sm:col-span-2 lg:col-span-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-[#526C78] dark:text-[#83BDCF]">
+              Avg. Monthly Spend
+            </span>
+            <span className="text-[10px] font-semibold text-gray-400">
+              {analytics.monthCount} {analytics.monthCount === 1 ? 'Month' : 'Months'}
+            </span>
+          </div>
+          <p className="text-xl sm:text-2xl font-bold font-mono text-[#243D49] dark:text-[#D6EBF3] mt-2">
+            {formatRawCurrency(analytics.avgMonthlyExpenses)}
+          </p>
+          <p className="text-xs text-[#526C78] dark:text-[#83BDCF] mt-0.5">
+            Across active calendar months
+          </p>
+        </Card>
+      </div>
+
+      {/* Financial Insights Banner */}
+      <FinancialInsightsBanner insights={analytics.insights} />
+
+      {/* Row 1: Income vs Expense Visualization & Savings Analysis */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <IncomeExpenseAnalysisChart monthlyTimeline={analytics.monthlyTimeline} />
+        </div>
+        <div className="lg:col-span-1">
+          <SavingsAnalysisWidget
+            totalIncome={analytics.totalIncome}
+            totalExpenses={analytics.totalExpenses}
+            netSavings={analytics.netSavings}
+            savingsRate={analytics.savingsRate}
+            prevNetSavings={analytics.prevNetSavings}
+            savingsPercentChange={analytics.savingsPercentChange}
+            prevLabel={prevDateRange.label}
+          />
         </div>
       </div>
+
+      {/* Row 2: Category Spending Analysis */}
+      <CategoryAnalysisSection
+        categoryBreakdown={analytics.categoryBreakdown}
+        highestCategory={analytics.highestCategory}
+        lowestCategory={analytics.lowestCategory}
+        totalExpenses={analytics.totalExpenses}
+        onCategorySelect={handleOpenDrillDown}
+      />
+
+      {/* Row 3: Budget Performance & Compliance */}
+      <BudgetPerformanceWidget
+        periodBudgetAllocated={analytics.periodBudgetAllocated}
+        totalExpenses={analytics.totalExpenses}
+        periodRemainingBudget={analytics.periodRemainingBudget}
+        periodBudgetUtilization={analytics.periodBudgetUtilization}
+        isPeriodOverBudget={analytics.isPeriodOverBudget}
+        categoryBudgetPerformance={analytics.categoryBudgetPerformance}
+      />
+
+      {/* Transaction Drill-Down Modal */}
+      <TransactionDrillDownModal
+        isOpen={isDrillDownOpen}
+        onClose={() => setIsDrillDownOpen(false)}
+        categoryName={drillDownCategory}
+        transactions={analytics.currentTransactions}
+        dateRangeLabel={dateRange.label}
+        startDate={dateRange.startDate}
+        endDate={dateRange.endDate}
+      />
     </div>
   );
 }

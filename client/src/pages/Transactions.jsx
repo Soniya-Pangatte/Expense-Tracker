@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -36,17 +36,18 @@ const ITEMS_PER_PAGE = 10;
 
 export default function Transactions() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { transactions, categories, deleteTransaction } = useTransactions();
   const { formatCurrency } = useCurrency();
 
-  // Search & Filter States
+  // Search & Filter States (respects location.state if navigated from Analytics drill-down)
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState(location.state?.category || 'all');
   const [selectedType, setSelectedType] = useState('all');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('all');
   const [selectedSource, setSelectedSource] = useState('all');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState(location.state?.startDate || '');
+  const [endDate, setEndDate] = useState(location.state?.endDate || '');
   const [sortBy, setSortBy] = useState('date-desc'); // date-desc, date-asc, amount-desc, amount-asc
   const [currentPage, setCurrentPage] = useState(1);
 
