@@ -57,6 +57,14 @@ export default function Analytics() {
   const [drillDownCategory, setDrillDownCategory] = useState(null); // null = all, or category name
   const [isDrillDownOpen, setIsDrillDownOpen] = useState(false);
 
+  const handleSelectPreset = (presetId) => {
+    setActivePreset(presetId);
+    if (presetId === 'custom' && (!customStart || !customEnd)) {
+      setCustomStart(dateRange.startDate);
+      setCustomEnd(dateRange.endDate);
+    }
+  };
+
   // 1. Resolve Active Date Boundaries & Previous Period Boundaries
   const dateRange = useMemo(() => {
     return getDateRangeBoundaries(activePreset, customStart, customEnd);
@@ -191,7 +199,7 @@ export default function Analytics() {
             {DATE_PRESETS.map((p) => (
               <button
                 key={p.id}
-                onClick={() => setActivePreset(p.id)}
+                onClick={() => handleSelectPreset(p.id)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                   activePreset === p.id
                     ? 'bg-[#447F98] text-white shadow-xs'

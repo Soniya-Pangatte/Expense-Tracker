@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   BarChart,
   Bar,
+  Cell,
   LineChart,
   Line,
   AreaChart,
@@ -157,10 +158,15 @@ export default function IncomeExpenseAnalysisChart({ monthlyTimeline = [] }) {
                 <Bar
                   dataKey="savings"
                   name="Net Savings"
-                  fill="#447F98"
-                  radius={[4, 4, 0, 0]}
                   maxBarSize={45}
-                />
+                >
+                  {monthlyTimeline.map((entry, index) => (
+                    <Cell
+                      key={`savings-cell-${index}`}
+                      fill={entry.savings >= 0 ? '#329B78' : '#C87575'}
+                    />
+                  ))}
+                </Bar>
               </BarChart>
             ) : (
               <AreaChart

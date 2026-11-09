@@ -179,6 +179,27 @@ export function getPreviousPeriodBoundaries(startDateStr, endDateStr, preset) {
 }
 
 /**
+ * Return all YYYY-MM keys spanning from startMonth to endMonth
+ */
+export function getMonthsInRange(startMonthStr, endMonthStr) {
+  if (!startMonthStr || !endMonthStr) return [];
+  const months = [];
+  const [startYear, startMonth] = startMonthStr.split('-').map(Number);
+  const [endYear, endMonth] = endMonthStr.split('-').map(Number);
+  let y = startYear;
+  let m = startMonth;
+  while (y < endYear || (y === endYear && m <= endMonth)) {
+    months.push(`${y}-${String(m).padStart(2, '0')}`);
+    m++;
+    if (m > 12) {
+      m = 1;
+      y++;
+    }
+  }
+  return months;
+}
+
+/**
  * Main Financial Analytics Calculation
  */
 export function calculateFinancialAnalytics({
@@ -235,7 +256,7 @@ export function calculateFinancialAnalytics({
       // Category breakdown aggregation
       const catName = tx.categoryName || tx.category_name || 'General';
       if (!categoryExpenseMap[catName]) {
-        const catMeta = categories.find((c) => c.name.toLowerCase() === catName.toLowerCase());
+        const catMeta = (categories || []).find((c) => c?.name?.toLowerCase() === catName.toLowerCase());
         categoryExpenseMap[catName] = {
           name: catName,
           value: 0,
@@ -286,9 +307,11 @@ export function calculateFinancialAnalytics({
   const expensePercentChange = calcPercentChange(totalExpenses, prevTotalExpenses);
   const savingsPercentChange = calcPercentChange(netSavings, prevNetSavings);
 
-  // 4. Calculate Average Monthly Expenses
-  const uniqueMonths = Object.keys(monthCashflowMap);
-  const monthCount = Math.max(1, uniqueMonths.length);
+  // 4. Resolve calendar months spanning from start to end
+  const startMonthStr = startDate ? startDate.slice(0, 7) : '2026-11';
+  const endMonthStr = endDate ? endDate.slice(0, 7) : '2026-11';
+  const calendarMonths = getMonthsInRange(startMonthStr, endMonthStr);
+  const monthCount = Math.max(1, calendarMonths.length);
   const avgMonthlyExpenses = Number((totalExpenses / monthCount).toFixed(2));
 
   // 5. Category Breakdown Details
@@ -304,33 +327,35 @@ export function calculateFinancialAnalytics({
   const highestCategory = categoryBreakdown.length > 0 ? categoryBreakdown[0] : null;
   const lowestCategory = categoryBreakdown.length > 1 ? categoryBreakdown[categoryBreakdown.length - 1] : null;
 
-  // 6. Monthly Cashflow Timeline
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const monthlyTimeline = Object.values(monthCashflowMap)
-    .sort((a, b) => a.monthKey.localeCompare(b.monthKey))
-    .map((m) => {
-      const parts = m.monthKey.split('-');
-      const yearStr = parts[0];
-      const monthIdx = parseInt(parts[1], 10) - 1;
-      const label = parts.length === 2 && monthIdx >= 0 && monthIdx < 12 ? `${monthNames[monthIdx]} ${yearStr}` : m.monthKey;
-      const savings = Number((m.income - m.expense).toFixed(2));
-      const rate = m.income > 0 ? Number(((savings / m.income) * 100).toFixed(1)) : 0;
+  // 6. Monthly Cashflow Timeline (populated for all months in range)
 
-      return {
-        monthKey: m.monthKey,
-        label,
-        income: Number(m.income.toFixed(2)),
-        expense: Number(m.expense.toFixed(2)),
-        savings,
-        savingsRate: rate,
-      };
-    });
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthlyTimeline = calendarMonths.map((mKey) => {
+    const existing = monthCashflowMap[mKey] || { income: 0, expense: 0 };
+    const parts = mKey.split('-');
+    const yearStr = parts[0];
+    const monthIdx = parseInt(parts[1], 10) - 1;
+    const label = parts.length === 2 && monthIdx >= 0 && monthIdx < 12 ? `${monthNames[monthIdx]} ${yearStr}` : mKey;
+    const inc = Number(existing.income.toFixed(2));
+    const exp = Number(existing.expense.toFixed(2));
+    const savings = Number((inc - exp).toFixed(2));
+    const rate = inc > 0 ? Number(((savings / inc) * 100).toFixed(1)) : 0;
+
+    return {
+      monthKey: mKey,
+      label,
+      income: inc,
+      expense: exp,
+      savings,
+      savingsRate: rate,
+    };
+  });
 
   // 7. Budget Performance for Period
-  // Aggregate monthly budgets matching months in this period
+  // Aggregate monthly budgets matching calendar months in this period
   let periodBudgetAllocated = 0;
-  uniqueMonths.forEach((mKey) => {
-    const record = monthlyBudgetsList.find((mb) => mb.month === mKey);
+  calendarMonths.forEach((mKey) => {
+    const record = (monthlyBudgetsList || []).find((mb) => mb.month === mKey);
     if (record && record.amount) {
       periodBudgetAllocated += convertAmount(Number(record.amount), record.currency || 'INR', currency);
     }
