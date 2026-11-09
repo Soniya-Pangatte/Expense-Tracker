@@ -202,3 +202,4 @@ await runAsyncTest('4.2: Security: No raw credentials exposed in system health',
 console.log('================================================================');
 console.log(`  ALL ${totalTests} ADMIN & RBAC QA TESTS PASSED! (${passedTests}/${totalTests})`);
 console.log('================================================================');
+

@@ -158,3 +158,4 @@ BEGIN
   DO UPDATE SET role = target_role, updated_at = NOW();
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+

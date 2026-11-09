@@ -10,11 +10,16 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const serverStartTime = Date.now();
 
-// Enable CORS for frontend Vite dev server and production
+// Configurable CORS for production deployment and local development
+const corsOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+  : true;
+
 app.use(
   cors({
-    origin: true,
+    origin: corsOrigins,
     credentials: true,
   })
 );
@@ -22,18 +27,24 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 
 // Request logging in development
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  next();
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+  });
+}
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
+  const uptimeSeconds = Math.floor((Date.now() - serverStartTime) / 1000);
   res.json({
     status: 'ok',
     service: 'SpendWise AI Financial Assistant Server',
+    environment: process.env.NODE_ENV || 'development',
+    uptimeSeconds,
     timestamp: new Date().toISOString(),
     geminiConfigured: Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your-gemini-api-key-here'),
+    supabaseConfigured: Boolean(process.env.SUPABASE_URL && !process.env.SUPABASE_URL.includes('placeholder')),
   });
 });
 
@@ -60,9 +71,21 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error', details: err.message });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 SpendWise AI Server running on port ${PORT}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
   console.log(`🤖 Gemini API Key configured: ${Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your-gemini-api-key-here')}`);
 });
+
+// Graceful shutdown handling
+const shutdown = (signal) => {
+  console.log(`\n[${signal}] Initiating graceful shutdown...`);
+  server.close(() => {
+    console.log('SpendWise Server closed gracefully.');
+    process.exit(0);
+  });
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
