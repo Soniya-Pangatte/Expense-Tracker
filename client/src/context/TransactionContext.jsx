@@ -362,29 +362,56 @@ export function TransactionProvider({ children }) {
         throw new Error(error.message || 'Failed to update transaction.');
       }
 
+      const normalizedUpdated = {
+        ...data,
+        id: data.id,
+        userId: data.user_id,
+        user_id: data.user_id,
+        amount: Number(data.amount),
+        currency: data.currency || updatedData.currency || 'INR',
+        categoryId: data.category_id,
+        category_id: data.category_id,
+        categoryName: data.category_name || updatedData.categoryName,
+        category_name: data.category_name || updatedData.categoryName,
+        paymentMethod: data.payment_method || updatedData.paymentMethod,
+        payment_method: data.payment_method || updatedData.paymentMethod,
+        source: data.source,
+        notes: data.notes,
+        date: data.date,
+        type: data.type,
+        description: data.description,
+        merchant: data.merchant,
+      };
+
       setTransactions((prev) => {
-        const updated = prev.map((tx) =>
-          tx.id === id
-            ? {
-                ...tx,
-                ...updatedData,
-                categoryName: dbUpdatePayload.category_name || tx.categoryName,
-                paymentMethod: dbUpdatePayload.payment_method || tx.paymentMethod,
-                currency: dbUpdatePayload.currency || tx.currency,
-              }
-            : tx
-        );
+        const updated = prev.map((tx) => (tx.id === id ? normalizedUpdated : tx));
         persistUserTransactions(updated);
         return updated;
       });
 
-      return data;
+      return normalizedUpdated;
     } else {
+      let updatedLocalTx = null;
       setTransactions((prev) => {
-        const updated = prev.map((tx) => (tx.id === id ? { ...tx, ...updatedData } : tx));
+        const updated = prev.map((tx) => {
+          if (tx.id === id) {
+            updatedLocalTx = {
+              ...tx,
+              ...updatedData,
+              amount: updatedData.amount !== undefined ? Number(updatedData.amount) : tx.amount,
+              categoryName: updatedData.categoryName || updatedData.category_name || tx.categoryName,
+              category_name: updatedData.categoryName || updatedData.category_name || tx.category_name,
+              paymentMethod: updatedData.paymentMethod || updatedData.payment_method || tx.paymentMethod,
+              payment_method: updatedData.paymentMethod || updatedData.payment_method || tx.payment_method,
+            };
+            return updatedLocalTx;
+          }
+          return tx;
+        });
         persistUserTransactions(updated);
         return updated;
       });
+      return updatedLocalTx;
     }
   };
 

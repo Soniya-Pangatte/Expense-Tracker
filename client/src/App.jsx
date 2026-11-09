@@ -86,6 +86,7 @@ export default function App() {
                   <Route path="/ai-assistant" element={<AIAssistant />} />
                   <Route path="/transactions" element={<Transactions />} />
                   <Route path="/add-expense" element={<AddExpense />} />
+                  <Route path="/edit-transaction/:id" element={<AddExpense />} />
                   <Route path="/scan-receipt" element={<ScanReceipt />} />
                   <Route path="/bank-imports" element={<BankImports />} />
                   <Route path="/budgets" element={<Budgets />} />
