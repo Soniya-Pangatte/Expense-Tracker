@@ -348,3 +348,4 @@ function generateClientFallbackScan(file, base64Data, fileHash, currency, availa
     isDuplicate: false,
   };
 }
+

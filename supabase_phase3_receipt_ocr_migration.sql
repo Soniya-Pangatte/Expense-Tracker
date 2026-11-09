@@ -83,3 +83,4 @@ END $$;
 -- Policy for users to delete their own receipts:
 -- CREATE POLICY "Users can delete their own receipts" ON storage.objects
 --   FOR DELETE USING (bucket_id = 'receipts' AND auth.uid()::text = (storage.foldername(name))[1]);
+
