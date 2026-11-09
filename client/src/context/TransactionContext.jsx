@@ -759,6 +759,44 @@ export function TransactionProvider({ children }) {
     }
   };
 
+  // Bulk add transactions (used by Bank Statement Import & Data feeds)
+  const addTransactionsBulk = useCallback((newTransactions) => {
+    if (!Array.isArray(newTransactions) || newTransactions.length === 0) return [];
+
+    const normalizedList = newTransactions.map((tx) => ({
+      ...tx,
+      id: tx.id || `tx-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+      userId: tx.user_id || tx.userId || user?.id,
+      user_id: tx.user_id || tx.userId || user?.id,
+      amount: Number(tx.amount || 0),
+      currency: tx.currency || 'INR',
+      categoryId: tx.category_id || tx.categoryId,
+      category_id: tx.category_id || tx.categoryId,
+      categoryName: tx.category_name || tx.categoryName || 'General',
+      category_name: tx.category_name || tx.categoryName || 'General',
+      paymentMethod: tx.payment_method || tx.paymentMethod || 'Bank Transfer',
+      payment_method: tx.payment_method || tx.paymentMethod || 'Bank Transfer',
+      source: tx.source || 'bank',
+      bankImportId: tx.bank_import_id || tx.bankImportId || null,
+      bank_import_id: tx.bank_import_id || tx.bankImportId || null,
+      referenceNumber: tx.reference_number || tx.referenceNumber || null,
+      reference_number: tx.reference_number || tx.referenceNumber || null,
+      notes: tx.notes || null,
+      date: tx.date || new Date().toISOString().split('T')[0],
+      type: tx.type === 'income' ? 'income' : 'expense',
+      description: tx.description || 'Imported Transaction',
+      merchant: tx.merchant || tx.description || 'Bank Vendor',
+    }));
+
+    setTransactions((prev) => {
+      const combined = [...normalizedList, ...prev];
+      persistUserTransactions(combined);
+      return combined;
+    });
+
+    return normalizedList;
+  }, [user]);
+
   // Edit transaction
   const editTransaction = async (id, updatedData) => {
     // Map camelCase fields to snake_case DB columns
@@ -1148,6 +1186,7 @@ export function TransactionProvider({ children }) {
     stats,
     loadingData,
     addTransaction,
+    addTransactionsBulk,
     editTransaction,
     deleteTransaction,
     loadStarterSampleData,

@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import aiRoutes from './routes/aiRoutes.js';
 import receiptRoutes from './routes/receiptRoutes.js';
+import bankImportRoutes from './routes/bankImportRoutes.js';
 
 dotenv.config();
 
@@ -40,6 +41,9 @@ app.use('/api/ai', aiRoutes);
 
 // Smart Receipt Scanning & OCR Routes
 app.use('/api/receipts', receiptRoutes);
+
+// Smart Bank Statement Import Routes
+app.use('/api/bank-imports', bankImportRoutes);
 
 // Generic 404 handler
 app.use((req, res) => {

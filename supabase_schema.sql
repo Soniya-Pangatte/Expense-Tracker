@@ -160,6 +160,7 @@ CREATE TABLE IF NOT EXISTS public.transactions (
   status TEXT DEFAULT 'completed',
   receipt_id UUID,
   bank_import_id UUID,
+  reference_number TEXT,
   notes TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -271,13 +272,20 @@ CREATE INDEX IF NOT EXISTS idx_receipt_uploads_tx ON public.receipt_uploads(tran
 CREATE TABLE IF NOT EXISTS public.bank_imports (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  bank_name TEXT NOT NULL,
+  bank_name TEXT NOT NULL DEFAULT 'Bank Statement',
   file_name TEXT,
+  file_hash TEXT,
+  file_size BIGINT,
   total_transactions INT DEFAULT 0,
   imported_transactions INT DEFAULT 0,
   duplicates_skipped INT DEFAULT 0,
-  status TEXT DEFAULT 'completed',
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  currency TEXT DEFAULT 'INR',
+  total_debit NUMERIC(12, 2) DEFAULT 0,
+  total_credit NUMERIC(12, 2) DEFAULT 0,
+  status TEXT DEFAULT 'completed' CHECK (status IN ('processing', 'completed', 'failed', 'partial')),
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE public.bank_imports ENABLE ROW LEVEL SECURITY;
@@ -286,6 +294,11 @@ CREATE POLICY "Users can manage their own bank imports"
   ON public.bank_imports FOR ALL
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
+
+CREATE INDEX IF NOT EXISTS idx_bank_imports_user_date ON public.bank_imports(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_bank_imports_user_hash ON public.bank_imports(user_id, file_hash);
+CREATE INDEX IF NOT EXISTS idx_transactions_bank_import ON public.transactions(bank_import_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_ref_num ON public.transactions(user_id, reference_number);
 
 
 -- 10. AI CONVERSATIONS TABLE
